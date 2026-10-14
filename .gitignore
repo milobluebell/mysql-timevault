@@ -1,0 +1,6 @@
+/target/
+/.env
+/storage/*
+!/storage/.gitkeep
+/mm-storage/*
+!/mm-storage/mm-config.yaml

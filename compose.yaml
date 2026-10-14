@@ -1,0 +1,55 @@
+services:
+  mysql:
+    image: ${MYSQL_IMAGE:-mysql:8.4}
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-app}
+      MYSQL_USER: ${MYSQL_USER:-mm_agent}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      MYSQL_SLOW_QUERY_SECONDS: ${MYSQL_SLOW_QUERY_SECONDS:-2}
+    command:
+      - --log-error=/var/lib/mysql/error.log
+      - --log-error-services=log_filter_internal;log_sink_internal
+      - --slow-query-log=ON
+      - --log-output=TABLE
+      - --long-query-time=${MYSQL_SLOW_QUERY_SECONDS:-2}
+      - --log-bin=mysql-bin
+      - --binlog-format=ROW
+      - --max-binlog-size=67108864
+      - --binlog-expire-logs-seconds=604800
+    ports:
+      - "127.0.0.1:24075:3306"
+    volumes:
+      - ./storage/mysql:/var/lib/mysql
+      - ./scripts/mysql-init.sh:/docker-entrypoint-initdb.d/10-mm-init.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping --host=127.0.0.1 --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks:
+      - mysql_private
+
+  backup:
+    build: .
+    restart: unless-stopped
+    user: "${MM_UID:-1000}:${MM_GID:-1000}"
+    environment:
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+    volumes:
+      - ./mm-storage:/app/mm-storage
+      - ./storage/mysql:/mysql-data:ro
+    group_add:
+      - "999"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    stop_grace_period: 10m
+    networks:
+      - mysql_private
+
+networks:
+  mysql_private:
+    driver: bridge

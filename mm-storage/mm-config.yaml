@@ -1,0 +1,14 @@
+mysql:
+  host: mysql
+  port: 3306
+  user: mm_agent
+  password_env: MYSQL_PASSWORD
+  error_log_file: /mysql-data/error.log
+
+backup:
+  databases:
+    - app
+  interval_seconds: 3600
+  max_backups: 3
+  binlog_poll_seconds: 60
+  log_poll_seconds: 10
