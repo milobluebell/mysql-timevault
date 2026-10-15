@@ -33,14 +33,14 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: ci-root-password
         ports:
-          - 3306/tcp
+          - 3306:3306
         options: >-
           --health-cmd "mysqladmin ping --host=127.0.0.1 --user=root --password=ci-root-password"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 24
     env:
-      MYSQL_TEST_PORT: ${{ job.services.mysql.ports[3306] }}
+      MYSQL_TEST_PORT: '3306'
       MYSQL_TEST_PASSWORD: ci-root-password
     steps:
       - uses: actions/checkout@v4
