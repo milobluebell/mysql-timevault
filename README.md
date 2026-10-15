@@ -20,7 +20,7 @@ mkdir -p mm-storage/backups
 docker compose up -d
 ```
 
-`MM_STORAGE_DIR` and `MM_CONFIG_FILE` in `.env` select the host backup directory and YAML file. The YAML file must already exist. On Linux, set `MM_UID`/`MM_GID` to its owner. The first scheduled backup runs after 24 hours by default; `backup.max_backups` defaults to 3. Restart the service after editing the YAML file.
+`MM_STORAGE_DIR` and `MM_CONFIG_FILE` in `.env` select the host backup directory and YAML file. The YAML file must already exist. The first scheduled backup runs after 24 hours by default; `backup.max_backups` defaults to 3. Restart the service after editing the YAML file.
 
 To start MySQL 8.4 in the same Compose project, copy `examples/mm-config.with-mysql.yaml` to `mm-config.yaml` and run `docker compose -f compose.with-mysql.yaml up -d`. `MYSQL_STORAGE_DIR` selects the MySQL data directory.
 

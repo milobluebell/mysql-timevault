@@ -28,8 +28,6 @@ services:
   backup:
     image: ${MM_IMAGE:?Set MM_IMAGE to the amd64 or arm64 image tag}
     restart: unless-stopped
-    user: "${MM_UID:-1000}:${MM_GID:-1000}"
-    entrypoint: ["/usr/local/bin/mysql-timevault", "--config", "/app/mm-config.yaml", "--storage-dir", "/app/mm-storage"]
     depends_on:
       mysql:
         condition: service_healthy

@@ -20,7 +20,7 @@ mkdir -p mm-storage/backups
 docker compose up -d
 ```
 
-`.env` 中的 `MM_STORAGE_DIR` 和 `MM_CONFIG_FILE` 分别指定宿主机备份目录和 YAML 文件；YAML 文件需预先存在。Linux 上将 `MM_UID`、`MM_GID` 设为目录所有者。默认启动 24 小时后首次备份，最多保留 3 份；修改 YAML 后重启服务。
+`.env` 中的 `MM_STORAGE_DIR` 和 `MM_CONFIG_FILE` 分别指定宿主机备份目录和 YAML 文件；YAML 文件需预先存在。默认启动 24 小时后首次备份，最多保留 3 份；修改 YAML 后重启服务。
 
 要在同一个 Compose 中启动 MySQL 8.4，可将 `examples/mm-config.with-mysql.yaml` 复制到 `mm-config.yaml`，并运行 `docker compose -f compose.with-mysql.yaml up -d`。`MYSQL_STORAGE_DIR` 可指定 MySQL 数据目录。
 
