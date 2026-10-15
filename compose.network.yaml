@@ -1,0 +1,9 @@
+services:
+  backup:
+    networks:
+      - mysql_network
+
+networks:
+  mysql_network:
+    external: true
+    name: ${MYSQL_DOCKER_NETWORK:?Set MYSQL_DOCKER_NETWORK to the existing MySQL Docker network}

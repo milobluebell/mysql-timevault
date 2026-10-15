@@ -78,7 +78,7 @@ fn run() -> Result<()> {
     }
     let password = config.password()?;
     let mut conn = db::connect(&config, &password)?;
-    let schema = db::metadata_schema(&mut conn)?;
+    let schema = db::metadata_schema(&mut conn, &root)?;
     db::setup(&mut conn, &schema)?;
     backup::remove_stale_partials(&root)?;
     db::reconcile_runs(&mut conn, &schema, &root)?;
@@ -133,9 +133,9 @@ fn run() -> Result<()> {
 }
 
 fn ingest(config: &config::Config, password: &str, schema: &str) {
-    match db::connect(config, password)
-        .and_then(|mut conn| db::ingest_logs(&mut conn, schema, &config.mysql.error_log_file))
-    {
+    match db::connect(config, password).and_then(|mut conn| {
+        db::ingest_logs(&mut conn, schema, config.mysql.error_log_file.as_deref())
+    }) {
         Ok((errors, slow)) if errors + slow > 0 => {
             println!("logs archived: {errors} errors, {slow} slow queries")
         }

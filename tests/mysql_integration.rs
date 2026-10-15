@@ -2,7 +2,6 @@ use chrono::Utc;
 use mysql::{prelude::Queryable, Conn};
 use mysql_timevault::{backup::Manifest, binlog, config::Config, db, Result};
 use std::{env, fs};
-use uuid::Uuid;
 
 fn connect() -> Result<Conn> {
     let port: u16 = env::var("MYSQL_TEST_PORT")?.parse()?;
@@ -16,10 +15,14 @@ fn connect() -> Result<Conn> {
 #[test]
 fn mysql_modules_work_with_relational_data() -> Result<()> {
     let mut conn = connect()?;
-    let suffix = Uuid::new_v4().simple().to_string();
-    let schema = format!("mm_{}", &suffix[..12]);
+    let temp = tempfile::tempdir()?;
+    let schema = db::metadata_schema(&mut conn, temp.path())?;
+    assert_eq!(db::metadata_schema(&mut conn, temp.path())?, schema);
+    assert_eq!(
+        fs::read_to_string(temp.path().join(".metadata-schema"))?,
+        schema
+    );
     conn.query_drop("CREATE DATABASE IF NOT EXISTS app")?;
-    conn.query_drop(format!("CREATE DATABASE `{schema}`"))?;
 
     for statement in include_str!("fixtures/relational_load.sql").split(';') {
         if !statement.trim().is_empty() {
@@ -52,7 +55,6 @@ fn mysql_modules_work_with_relational_data() -> Result<()> {
         .ok_or("foreign key count missing")?;
     assert_eq!(foreign_keys, 10);
 
-    assert_eq!(db::metadata_schema(&mut conn)?, schema);
     db::setup(&mut conn, &schema)?;
     db::setup(&mut conn, &schema)?;
 
@@ -99,16 +101,20 @@ fn mysql_modules_work_with_relational_data() -> Result<()> {
     assert!(!logs.is_empty());
     assert!(logs.iter().all(|(_, size)| *size > 0));
 
-    let temp = tempfile::tempdir()?;
     let error_log = temp.path().join("error.log");
     fs::write(
         &error_log,
         b"2026-10-15T00:00:00.000000Z [Note] integration test line\n",
     )?;
-    let (errors, _) = db::ingest_logs(&mut conn, &schema, &error_log)?;
+    let (errors, _) = db::ingest_logs(&mut conn, &schema, Some(&error_log))?;
     assert_eq!(errors, 1);
-    let (errors_again, _) = db::ingest_logs(&mut conn, &schema, &error_log)?;
+    let (errors_again, _) = db::ingest_logs(&mut conn, &schema, Some(&error_log))?;
     assert_eq!(errors_again, 0);
+    let (no_error_file, _) = db::ingest_logs(&mut conn, &schema, None)?;
+    assert_eq!(no_error_file, 0);
+
+    conn.query_drop(format!("DROP DATABASE `{schema}`"))?;
+    assert!(db::metadata_schema(&mut conn, temp.path()).is_err());
 
     Ok(())
 }

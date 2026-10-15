@@ -1,9 +1,8 @@
 mysql:
-  host: mysql
+  host: your-mysql-host.example.com
   port: 3306
   user: mm_agent
   password_env: MYSQL_PASSWORD
-  error_log_file: /mysql-data/error.log
 
 backup:
   databases:
