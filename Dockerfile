@@ -11,6 +11,7 @@ RUN case "$TARGETARCH" in arm64) rpm_arch=aarch64 ;; amd64) rpm_arch=x86_64 ;; *
     && test -x /build/usr/bin/mysqlbinlog
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
+COPY tests ./tests
 RUN cargo build --release --locked
 
 FROM mysql:8.4
