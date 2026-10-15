@@ -104,7 +104,7 @@ fn run() -> Result<()> {
     let stopping = Arc::new(AtomicBool::new(false));
     let signal = Arc::clone(&stopping);
     ctrlc::set_handler(move || signal.store(true, Ordering::SeqCst))?;
-    let mut next_backup = Instant::now();
+    let mut next_backup = Instant::now() + Duration::from_secs(config.backup.interval_seconds);
     let mut next_binlog = Instant::now();
     let mut next_logs = Instant::now();
     println!(
