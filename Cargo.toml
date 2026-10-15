@@ -1,6 +1,6 @@
 [package]
 name = "mysql-timevault"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "0BSD"
 description = "Scheduled, versioned MySQL backups with binary-log point-in-time recovery"

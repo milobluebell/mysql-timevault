@@ -6,7 +6,7 @@ Scheduled, versioned database backups with binary-log point-in-time recovery. [ç
 
 MySQL 5.7, 8.0 and 8.4 are supported as sources. The container runs only the backup client; bring your own MySQL server. Restores require a separate, empty MySQL server of the same release series. MySQL accounts and grants are not backed up.
 
-Choose an image tag matching your host: `0.1.0-amd64` or `0.1.0-arm64` (also `latest-amd64` / `latest-arm64`). Each tag contains one architecture.
+Choose an image tag matching your host: `0.1.1-amd64` or `0.1.1-arm64` (also `latest-amd64` / `latest-arm64`). Each tag contains one architecture.
 
 ## Start
 
