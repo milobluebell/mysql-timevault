@@ -20,6 +20,33 @@ jobs:
       - name: Test
         run: cargo test --locked
 
+  mysql-integration:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        mysql: ['5.7', '8.0', '8.4']
+    services:
+      mysql:
+        image: mysql:${{ matrix.mysql }}
+        command: --log-bin=mysql-bin --binlog-format=ROW
+        env:
+          MYSQL_ROOT_PASSWORD: ci-root-password
+        ports:
+          - 3306/tcp
+        options: >-
+          --health-cmd "mysqladmin ping --host=127.0.0.1 --user=root --password=ci-root-password"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 24
+    env:
+      MYSQL_TEST_PORT: ${{ job.services.mysql.ports[3306] }}
+      MYSQL_TEST_PASSWORD: ci-root-password
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test MySQL modules
+        run: cargo test --locked --features mysql-integration --test mysql_integration -- --nocapture
+
   audit:
     runs-on: ubuntu-latest
     steps:

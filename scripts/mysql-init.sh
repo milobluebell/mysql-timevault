@@ -21,4 +21,4 @@ GRANT SELECT ON mysql.slow_log TO '$MYSQL_USER'@'%';
 GRANT RELOAD, REPLICATION CLIENT, REPLICATION SLAVE, SHOW DATABASES ON *.* TO '$MYSQL_USER'@'%';
 SQL
 
-echo "Maintaining MySQL metadata schema: $schema_name"
+echo "MySQL TimeVault metadata schema: $schema_name"

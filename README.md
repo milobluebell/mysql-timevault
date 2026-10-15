@@ -1,6 +1,6 @@
-# Maintaining MySQL
+# MySQL TimeVault
 
-定期备份指定的 MySQL **数据库**，保留可选择的备份版本，并支持从完整备份加 binary log 恢复到指定时间点。
+定期、按库备份 MySQL，保留可选择的备份版本，并结合 binary log 恢复到指定时间点。
 
 ## 兼容性
 

@@ -1,16 +1,8 @@
-mod backup;
-mod binlog;
-mod config;
-mod db;
-mod restore;
-
 use fs2::FileExt;
-#[cfg(unix)]
-use std::os::unix::fs::PermissionsExt;
+use mysql_timevault::{backup, binlog, config, db, private_directory, restore, Result};
 use std::{
     env,
-    error::Error,
-    fs::{self, OpenOptions},
+    fs::OpenOptions,
     path::PathBuf,
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -19,8 +11,6 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
-
-type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 fn main() {
     if let Err(err) = run() {
@@ -142,13 +132,6 @@ fn run() -> Result<()> {
     Ok(())
 }
 
-fn private_directory(path: &std::path::Path) -> Result<()> {
-    fs::create_dir_all(path)?;
-    #[cfg(unix)]
-    fs::set_permissions(path, fs::Permissions::from_mode(0o700))?;
-    Ok(())
-}
-
 fn ingest(config: &config::Config, password: &str, schema: &str) {
     match db::connect(config, password)
         .and_then(|mut conn| db::ingest_logs(&mut conn, schema, &config.mysql.error_log_file))
@@ -162,5 +145,5 @@ fn ingest(config: &config::Config, password: &str, schema: &str) {
 }
 
 fn usage() {
-    println!("Usage: maintaining-mysql [--config PATH] [serve|once|list|restore ID --target-host HOST --target-user USER --target-password-env ENV [--target-port PORT] [--at RFC3339]]");
+    println!("Usage: mysql-timevault [--config PATH] [serve|once|list|restore ID --target-host HOST --target-user USER --target-password-env ENV [--target-port PORT] [--at RFC3339]]");
 }

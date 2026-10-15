@@ -14,9 +14,9 @@ COPY src ./src
 RUN cargo build --release --locked
 
 FROM mysql:8.4
-COPY --from=builder /build/target/release/maintaining-mysql /usr/local/bin/maintaining-mysql
+COPY --from=builder /build/target/release/mysql-timevault /usr/local/bin/mysql-timevault
 COPY --from=builder /build/usr/bin/mysqlbinlog /usr/local/bin/mysqlbinlog
 COPY --from=mysql80 /usr/bin/mysqldump /usr/local/bin/mysqldump80
 WORKDIR /app/mm-storage
-ENTRYPOINT ["/usr/local/bin/maintaining-mysql"]
+ENTRYPOINT ["/usr/local/bin/mysql-timevault"]
 CMD []
