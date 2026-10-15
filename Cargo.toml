@@ -1,8 +1,9 @@
 [package]
-name = "maintaining-mysql"
+name = "mysql-timevault"
 version = "0.1.0"
 edition = "2021"
 license = "0BSD"
+description = "Scheduled, versioned MySQL backups with binary-log point-in-time recovery"
 
 [dependencies]
 chrono = { version = "0.4", default-features = false, features = ["clock", "std", "serde"] }
@@ -18,3 +19,10 @@ uuid = { version = "1.11", features = ["v4"] }
 
 [dev-dependencies]
 tempfile = "3.13"
+
+[features]
+mysql-integration = []
+
+[[test]]
+name = "mysql_integration"
+required-features = ["mysql-integration"]

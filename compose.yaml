@@ -21,7 +21,7 @@ services:
     ports:
       - "127.0.0.1:24075:3306"
     volumes:
-      - ./storage/mysql:/var/lib/mysql
+      - ${MYSQL_STORAGE_DIR:-./storage/mysql}:/var/lib/mysql
       - ./scripts/mysql-init.sh:/docker-entrypoint-initdb.d/10-mm-init.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping --host=127.0.0.1 --silent"]
@@ -39,8 +39,14 @@ services:
     environment:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
     volumes:
-      - ./mm-storage:/app/mm-storage
-      - ./storage/mysql:/mysql-data:ro
+      - ${MM_STORAGE_DIR:-./mm-storage}:/app/mm-storage
+      - type: bind
+        source: ${MM_CONFIG_FILE:-./mm-storage/mm-config.yaml}
+        target: /app/mm-storage/mm-config.yaml
+        read_only: true
+        bind:
+          create_host_path: false
+      - ${MYSQL_STORAGE_DIR:-./storage/mysql}:/mysql-data:ro
     group_add:
       - "999"
     depends_on:

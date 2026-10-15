@@ -30,6 +30,7 @@ pub struct MysqlConfig {
 #[serde(deny_unknown_fields)]
 pub struct BackupConfig {
     pub databases: Vec<String>,
+    #[serde(default = "default_backup_interval")]
     pub interval_seconds: u64,
     #[serde(default = "default_max_backups")]
     pub max_backups: usize,
@@ -47,6 +48,9 @@ fn default_error_log_file() -> PathBuf {
 }
 fn default_max_backups() -> usize {
     3
+}
+fn default_backup_interval() -> u64 {
+    24 * 60 * 60
 }
 fn default_binlog_poll() -> u64 {
     60
@@ -136,8 +140,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn default_retention_is_three() {
-        let config: Config = serde_saphyr::from_str("mysql:\n  host: mysql\n  user: mm_agent\n  password_env: MYSQL_PASSWORD\nbackup:\n  databases: [app]\n  interval_seconds: 3600\n").unwrap();
+    fn default_backup_interval_and_retention() {
+        let config: Config = serde_saphyr::from_str("mysql:\n  host: mysql\n  user: mm_agent\n  password_env: MYSQL_PASSWORD\nbackup:\n  databases: [app]\n").unwrap();
+        assert_eq!(config.backup.interval_seconds, 86_400);
         assert_eq!(config.backup.max_backups, 3);
         assert!(config.validate().is_ok());
     }

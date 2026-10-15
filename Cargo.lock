@@ -604,23 +604,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ef9ac18847474e638e3702b76c65d4eb93428471a74778ef0f1be711717f89b5"
 
 [[package]]
-name = "maintaining-mysql"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "ctrlc",
- "flate2",
- "fs2",
- "mysql",
- "serde",
- "serde-saphyr",
- "serde_json",
- "sha2",
- "tempfile",
- "uuid",
-]
-
-[[package]]
 name = "memchr"
 version = "2.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -664,6 +647,23 @@ dependencies = [
  "socket2",
  "twox-hash",
  "url",
+]
+
+[[package]]
+name = "mysql-timevault"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "ctrlc",
+ "flate2",
+ "fs2",
+ "mysql",
+ "serde",
+ "serde-saphyr",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "uuid",
 ]
 
 [[package]]
