@@ -22,6 +22,8 @@ docker compose up -d
 
 `.env` 中的 `MM_STORAGE_DIR` 和 `MM_CONFIG_FILE` 分别指定宿主机备份目录和 YAML 文件；YAML 文件需预先存在。Linux 上将 `MM_UID`、`MM_GID` 设为目录所有者。默认启动 24 小时后首次备份，最多保留 3 份；修改 YAML 后重启服务。
 
+要在同一个 Compose 中启动 MySQL 8.4，可将 `examples/mm-config.with-mysql.yaml` 复制到配置路径，并运行 `docker compose -f compose.with-mysql.yaml up -d`。`MYSQL_STORAGE_DIR` 可指定 MySQL 数据目录。
+
 错误日志是 MySQL 服务端本地文件，不能仅靠 SQL 连接读取。如果 Docker 宿主机能访问它，设置 `MYSQL_ERROR_LOG_FILE` 为宿主机上的绝对路径，在 YAML 中加入 `mysql.error_log_file: /mysql-data/error.log`，并将 `compose.error-log.yaml` 加入 `COMPOSE_FILE`（或以 `-f` 指定）。未挂载时，备份和慢查询采集仍可运行。
 
 ## 备份与恢复

@@ -22,6 +22,8 @@ docker compose up -d
 
 `MM_STORAGE_DIR` and `MM_CONFIG_FILE` in `.env` select the host backup directory and YAML file. The YAML file must already exist. On Linux, set `MM_UID`/`MM_GID` to its owner. The first scheduled backup runs after 24 hours by default; `backup.max_backups` defaults to 3. Restart the service after editing the YAML file.
 
+To start MySQL 8.4 in the same Compose project, copy `examples/mm-config.with-mysql.yaml` to your config path and run `docker compose -f compose.with-mysql.yaml up -d`. `MYSQL_STORAGE_DIR` selects the MySQL data directory.
+
 The error log is a **server-side file**, so remote MySQL hosts cannot expose it over the SQL connection. To archive it when the file is available on the Docker host, set `MYSQL_ERROR_LOG_FILE` to its absolute host path, add `mysql.error_log_file: /mysql-data/error.log` to the YAML, and append `compose.error-log.yaml` to `COMPOSE_FILE` (or pass both files with `-f`). Without that mount, slow-query records and backups still run.
 
 ## Backup and restore
