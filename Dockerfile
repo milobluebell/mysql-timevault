@@ -1,4 +1,5 @@
 FROM mysql:8.0 AS mysql80
+FROM mysql:8.4 AS mysql84
 
 FROM rust:1.92-alpine AS builder
 WORKDIR /build
@@ -14,10 +15,15 @@ COPY src ./src
 COPY tests ./tests
 RUN cargo build --release --locked
 
-FROM mysql:8.4
+FROM oraclelinux:9-slim
+RUN microdnf install -y libaio ncurses-libs openssl-libs zlib libzstd \
+    && microdnf clean all
 COPY --from=builder /build/target/release/mysql-timevault /usr/local/bin/mysql-timevault
 COPY --from=builder /build/usr/bin/mysqlbinlog /usr/local/bin/mysqlbinlog
 COPY --from=mysql80 /usr/bin/mysqldump /usr/local/bin/mysqldump80
+COPY --from=mysql84 /usr/bin/mysqldump /usr/local/bin/mysqldump
+COPY --from=mysql84 /usr/bin/mysql /usr/local/bin/mysql
+RUN mysql --version && mysqldump --version && mysqldump80 --version && mysqlbinlog --version
 WORKDIR /app/mm-storage
 ENTRYPOINT ["/usr/local/bin/mysql-timevault"]
 CMD []

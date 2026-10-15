@@ -3,7 +3,7 @@ use chrono::{NaiveDateTime, Utc};
 use mysql::{params, prelude::Queryable, Conn, OptsBuilder};
 use sha2::{Digest, Sha256};
 use std::{
-    fs::File,
+    fs::{self, File},
     io::{BufRead, BufReader, Seek, SeekFrom},
     path::Path,
 };
@@ -19,18 +19,38 @@ pub fn connect(config: &Config, password: &str) -> Result<Conn> {
     Ok(conn)
 }
 
-pub fn metadata_schema(conn: &mut Conn) -> Result<String> {
-    let names: Vec<String> = conn.query("SELECT SCHEMA_NAME FROM information_schema.SCHEMATA")?;
-    let mut matches = names.into_iter().filter(|name| {
-        name.len() == 15
-            && name.starts_with("mm_")
-            && name[3..].bytes().all(|b| b.is_ascii_hexdigit())
-    });
-    let schema = matches
-        .next()
-        .ok_or("metadata database mm_<12 hex> not found; initialize a fresh MySQL data volume")?;
-    if matches.next().is_some() {
-        return Err("multiple mm_<12 hex> databases found; metadata database is ambiguous".into());
+pub fn metadata_schema(conn: &mut Conn, root: &Path) -> Result<String> {
+    let marker = root.join(".metadata-schema");
+    let manifests = backup::list(root)?;
+    let existing_identity = marker.exists() || !manifests.is_empty();
+    let schema = if marker.exists() {
+        fs::read_to_string(&marker)?.trim().to_owned()
+    } else if let Some(manifest) = manifests.first() {
+        manifest.metadata_schema.clone()
+    } else {
+        format!("mm_{}", &uuid::Uuid::new_v4().simple().to_string()[..12])
+    };
+    if schema.len() != 15
+        || !schema.starts_with("mm_")
+        || !schema[3..].bytes().all(|b| b.is_ascii_hexdigit())
+    {
+        return Err("invalid metadata schema name".into());
+    }
+    let exists: Option<String> = conn.exec_first(
+        "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = ?",
+        (&schema,),
+    )?;
+    if exists.is_none() && existing_identity {
+        return Err(format!(
+            "metadata database {schema} is missing on the configured MySQL server"
+        )
+        .into());
+    }
+    if exists.is_none() {
+        conn.query_drop(format!("CREATE DATABASE `{schema}` CHARACTER SET utf8mb4"))?;
+    }
+    if !marker.exists() {
+        fs::write(marker, &schema)?;
     }
     Ok(schema)
 }
@@ -223,8 +243,16 @@ pub fn reconcile_runs(conn: &mut Conn, schema: &str, root: &std::path::Path) -> 
     Ok(())
 }
 
-pub fn ingest_logs(conn: &mut Conn, schema: &str, error_log_file: &Path) -> Result<(usize, usize)> {
-    let errors = ingest_errors(conn, schema, error_log_file)?;
+pub fn ingest_logs(
+    conn: &mut Conn,
+    schema: &str,
+    error_log_file: Option<&Path>,
+) -> Result<(usize, usize)> {
+    let errors = if let Some(path) = error_log_file {
+        ingest_errors(conn, schema, path)?
+    } else {
+        0
+    };
     let slow = ingest_slow(conn, schema)?;
     Ok((errors, slow))
 }

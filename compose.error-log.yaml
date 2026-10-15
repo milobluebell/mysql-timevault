@@ -1,0 +1,9 @@
+services:
+  backup:
+    volumes:
+      - type: bind
+        source: ${MYSQL_ERROR_LOG_FILE:?Set MYSQL_ERROR_LOG_FILE to the readable host error log}
+        target: /mysql-data/error.log
+        read_only: true
+        bind:
+          create_host_path: false

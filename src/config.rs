@@ -22,8 +22,8 @@ pub struct MysqlConfig {
     pub port: u16,
     pub user: String,
     pub password_env: String,
-    #[serde(default = "default_error_log_file")]
-    pub error_log_file: PathBuf,
+    #[serde(default)]
+    pub error_log_file: Option<PathBuf>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -42,9 +42,6 @@ pub struct BackupConfig {
 
 fn default_port() -> u16 {
     3306
-}
-fn default_error_log_file() -> PathBuf {
-    PathBuf::from("/mysql-data/error.log")
 }
 fn default_max_backups() -> usize {
     3

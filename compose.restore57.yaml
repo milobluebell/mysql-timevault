@@ -1,4 +1,0 @@
-services:
-  mysql_restore:
-    image: mysql:5.7
-    platform: linux/amd64
