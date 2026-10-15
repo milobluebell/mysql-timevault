@@ -29,7 +29,7 @@ jobs:
     services:
       mysql:
         image: mysql:${{ matrix.mysql }}
-        command: --log-bin=mysql-bin --binlog-format=ROW
+        command: --log-bin=mysql-bin --binlog-format=ROW --server-id=1
         env:
           MYSQL_ROOT_PASSWORD: ci-root-password
         ports:
