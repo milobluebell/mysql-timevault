@@ -18,7 +18,12 @@ pub fn connect(config: &Config, credentials: &Credentials) -> Result<Conn> {
         .tcp_port(config.mysql.port)
         .user(Some(credentials.user.clone()))
         .pass(Some(credentials.password.clone()));
-    let mut conn = Conn::new(opts)?;
+    let mut conn = Conn::new(opts).map_err(|err| {
+        format!(
+            "cannot connect to MySQL at {}:{}: {err}",
+            config.mysql.host, config.mysql.port
+        )
+    })?;
     conn.query_drop("SET SESSION time_zone = '+00:00'")?;
     Ok(conn)
 }
