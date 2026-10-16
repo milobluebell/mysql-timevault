@@ -25,5 +25,5 @@ COPY --from=mysql84 /usr/bin/mysqldump /usr/local/bin/mysqldump
 COPY --from=mysql84 /usr/bin/mysql /usr/local/bin/mysql
 RUN mysql --version && mysqldump --version && mysqldump80 --version && mysqlbinlog --version
 WORKDIR /app/mm-storage
-ENTRYPOINT ["/usr/local/bin/mysql-timevault"]
+ENTRYPOINT ["/usr/local/bin/mysql-timevault", "--config", "/app/mm-config.yaml", "--storage-dir", "/app/mm-storage"]
 CMD []

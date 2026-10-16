@@ -120,12 +120,13 @@ impl Config {
 pub fn validate_identifier(value: &str) -> Result<()> {
     if value.is_empty()
         || value.len() > 64
+        || value.starts_with('-')
         || !value
             .bytes()
-            .all(|b| b.is_ascii_alphanumeric() || b == b'_')
+            .all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-')
     {
         return Err(format!(
-            "invalid database name {value:?}; use 1–64 ASCII letters, digits, or underscores"
+            "invalid database name {value:?}; use 1–64 ASCII letters, digits, underscores, or hyphens, without a leading hyphen"
         )
         .into());
     }
@@ -148,6 +149,13 @@ mod tests {
     fn metadata_schema_is_not_user_selected() {
         let config: Config = serde_saphyr::from_str("mysql:\n  host: mysql\n  user: mm_agent\n  password_env: MYSQL_PASSWORD\nbackup:\n  databases: [mm_0123456789ab]\n  interval_seconds: 3600\n").unwrap();
         assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn hyphenated_database_name_is_valid() {
+        let config: Config = serde_saphyr::from_str("mysql:\n  host: mysql\n  user: mm_agent\n  password_env: MYSQL_PASSWORD\nbackup:\n  databases: [overjoy, overjoy_auth, zq-rag]\n").unwrap();
+        assert!(config.validate().is_ok());
+        assert!(validate_identifier("-option").is_err());
     }
 
     #[test]

@@ -1,0 +1,13 @@
+mysql:
+  host: your-mysql-host.example.com
+  port: 3306
+  user: mm_agent
+  password_env: MYSQL_PASSWORD
+
+backup:
+  databases:
+    - app
+  interval_seconds: 86400
+  max_backups: 3
+  binlog_poll_seconds: 60
+  log_poll_seconds: 10

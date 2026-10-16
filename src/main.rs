@@ -22,11 +22,17 @@ fn main() {
 fn run() -> Result<()> {
     let mut args = env::args().skip(1);
     let mut config_path = PathBuf::from("mm-config.yaml");
+    let mut storage_dir = None;
     let mut command = String::from("serve");
     let mut rest = Vec::new();
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--config" => config_path = PathBuf::from(args.next().ok_or("--config needs a path")?),
+            "--storage-dir" => {
+                storage_dir = Some(PathBuf::from(
+                    args.next().ok_or("--storage-dir needs a path")?,
+                ))
+            }
             "--once" => command = String::from("once"),
             "--help" | "-h" => {
                 usage();
@@ -38,7 +44,17 @@ fn run() -> Result<()> {
             _ => rest.push(arg),
         }
     }
-    let (config, root) = config::load(&config_path)?;
+    let (config, config_dir) = config::load(&config_path)?;
+    let root = match storage_dir {
+        Some(path) => {
+            let path = path.canonicalize()?;
+            if !path.is_dir() {
+                return Err("--storage-dir must be a directory".into());
+            }
+            path
+        }
+        None => config_dir,
+    };
     if command == "list" {
         if !rest.is_empty() {
             return Err("list takes no arguments".into());
@@ -145,5 +161,5 @@ fn ingest(config: &config::Config, password: &str, schema: &str) {
 }
 
 fn usage() {
-    println!("Usage: mysql-timevault [--config PATH] [serve|once|list|restore ID --target-host HOST --target-user USER --target-password-env ENV [--target-port PORT] [--at RFC3339]]");
+    println!("Usage: mysql-timevault [--config PATH] [--storage-dir PATH] [serve|once|list|restore ID --target-host HOST --target-user USER --target-password-env ENV [--target-port PORT] [--at RFC3339]]");
 }

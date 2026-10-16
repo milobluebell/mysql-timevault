@@ -2,17 +2,11 @@ services:
   backup:
     image: ${MM_IMAGE:?Set MM_IMAGE to the amd64 or arm64 image tag}
     restart: unless-stopped
-    user: "${MM_UID:-1000}:${MM_GID:-1000}"
     environment:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
     extra_hosts:
       - host.docker.internal:host-gateway
     volumes:
       - ${MM_STORAGE_DIR:-./mm-storage}:/app/mm-storage
-      - type: bind
-        source: ${MM_CONFIG_FILE:-./mm-storage/mm-config.yaml}
-        target: /app/mm-storage/mm-config.yaml
-        read_only: true
-        bind:
-          create_host_path: false
+      - ${MM_CONFIG_FILE:-./mm-config.yaml}:/app/mm-config.yaml:ro
     stop_grace_period: 10m

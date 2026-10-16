@@ -1,0 +1,13 @@
+mysql:
+  host: mysql
+  port: 3306
+  user: root
+  password_env: MYSQL_PASSWORD
+
+backup:
+  databases:
+    - overjoy
+    - overjoy_auth
+    - zq-rag
+  interval_seconds: 86400
+  max_backups: 3

@@ -1,0 +1,39 @@
+services:
+  mysql:
+    image: mysql:8.4.11
+    container_name: mysql_for_zq
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      TZ: Asia/Shanghai
+    command:
+      - --server-id=1
+      - --log-bin=mysql-bin
+      - --binlog-format=ROW
+      - --slow-query-log=ON
+      - --log-output=TABLE
+    ports:
+      - "27051:3306"
+    volumes:
+      - ${MYSQL_STORAGE_DIR:-./storage}:/var/lib/mysql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'MYSQL_PWD="$${MYSQL_ROOT_PASSWORD}" mysql --protocol=tcp --host=127.0.0.1 --user=root --batch --skip-column-names --execute="SELECT 1" >/dev/null'
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  backup:
+    image: ${MM_IMAGE:?Set MM_IMAGE to the amd64 or arm64 image tag}
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+    volumes:
+      - ${MM_STORAGE_DIR:-./mm-storage}:/app/mm-storage
+      - ${MM_CONFIG_FILE:-./mm-config.yaml}:/app/mm-config.yaml:ro
+    stop_grace_period: 10m
