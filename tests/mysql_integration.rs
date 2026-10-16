@@ -1,15 +1,26 @@
 use chrono::Utc;
 use mysql::{prelude::Queryable, Conn};
-use mysql_timevault::{backup::Manifest, binlog, config::Config, db, Result};
+use mysql_timevault::{
+    backup::Manifest,
+    binlog,
+    config::{Config, Credentials},
+    db, Result,
+};
 use std::{env, fs};
 
 fn connect() -> Result<Conn> {
     let port: u16 = env::var("MYSQL_TEST_PORT")?.parse()?;
     let password = env::var("MYSQL_TEST_PASSWORD")?;
     let config: Config = serde_saphyr::from_str(&format!(
-        "mysql:\n  host: 127.0.0.1\n  port: {port}\n  user: root\n  password_env: MYSQL_TEST_PASSWORD\nbackup:\n  databases: [app]\n"
+        "mysql:\n  host: 127.0.0.1\n  port: {port}\nbackup:\n  databases: [app]\n"
     ))?;
-    db::connect(&config, &password)
+    db::connect(
+        &config,
+        &Credentials {
+            user: "root".into(),
+            password,
+        },
+    )
 }
 
 #[test]

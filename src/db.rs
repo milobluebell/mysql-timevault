@@ -1,4 +1,8 @@
-use crate::{backup, config::Config, Result};
+use crate::{
+    backup,
+    config::{Config, Credentials},
+    Result,
+};
 use chrono::{NaiveDateTime, Utc};
 use mysql::{params, prelude::Queryable, Conn, OptsBuilder};
 use sha2::{Digest, Sha256};
@@ -8,12 +12,12 @@ use std::{
     path::Path,
 };
 
-pub fn connect(config: &Config, password: &str) -> Result<Conn> {
+pub fn connect(config: &Config, credentials: &Credentials) -> Result<Conn> {
     let opts = OptsBuilder::new()
         .ip_or_hostname(Some(config.mysql.host.clone()))
         .tcp_port(config.mysql.port)
-        .user(Some(config.mysql.user.clone()))
-        .pass(Some(password.to_owned()));
+        .user(Some(credentials.user.clone()))
+        .pass(Some(credentials.password.clone()));
     let mut conn = Conn::new(opts)?;
     conn.query_drop("SET SESSION time_zone = '+00:00'")?;
     Ok(conn)

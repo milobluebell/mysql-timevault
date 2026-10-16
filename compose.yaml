@@ -3,7 +3,8 @@ services:
     image: ${MM_IMAGE:?Set MM_IMAGE to the amd64 or arm64 image tag}
     restart: unless-stopped
     environment:
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      MYSQL_USER: ${MYSQL_USER-}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD-}
     extra_hosts:
       - host.docker.internal:host-gateway
     volumes:

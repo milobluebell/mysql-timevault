@@ -1,4 +1,7 @@
-use crate::{config::Config, db, Result};
+use crate::{
+    config::{Config, Credentials},
+    db, Result,
+};
 use chrono::{DateTime, Utc};
 use mysql::{prelude::Queryable, Conn, Row};
 use serde::{Deserialize, Serialize};
@@ -39,11 +42,16 @@ pub fn remote_logs(conn: &mut Conn) -> Result<Vec<(String, u64)>> {
     Ok(logs)
 }
 
-pub fn sync(config: &Config, password: &str, root: &Path, from_file: &str) -> Result<usize> {
+pub fn sync(
+    config: &Config,
+    credentials: &Credentials,
+    root: &Path,
+    from_file: &str,
+) -> Result<usize> {
     if !valid_file(from_file) {
         return Err("invalid source binary log file name".into());
     }
-    let mut conn = db::connect(config, password)?;
+    let mut conn = db::connect(config, credentials)?;
     let logs = remote_logs(&mut conn)?;
     let covered_through = Utc::now();
     let start = logs
@@ -66,10 +74,10 @@ pub fn sync(config: &Config, password: &str, root: &Path, from_file: &str) -> Re
                 .arg("--raw")
                 .arg(format!("--host={}", config.mysql.host))
                 .arg(format!("--port={}", config.mysql.port))
-                .arg(format!("--user={}", config.mysql.user))
+                .arg(format!("--user={}", credentials.user))
                 .arg("--protocol=tcp")
                 .arg(name)
-                .env("MYSQL_PWD", password)
+                .env("MYSQL_PWD", &credentials.password)
                 .current_dir(&staging)
                 .stdout(Stdio::null())
                 .stderr(Stdio::inherit())
