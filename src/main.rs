@@ -92,8 +92,8 @@ fn run() -> Result<()> {
     if !rest.is_empty() {
         return Err(format!("unexpected arguments: {}", rest.join(" ")).into());
     }
-    let password = config.password()?;
-    let mut conn = db::connect(&config, &password)?;
+    let credentials = config.credentials()?;
+    let mut conn = db::connect(&config, &credentials)?;
     let schema = db::metadata_schema(&mut conn, &root)?;
     db::setup(&mut conn, &schema)?;
     backup::remove_stale_partials(&root)?;
@@ -101,8 +101,8 @@ fn run() -> Result<()> {
     drop(conn);
 
     if command == "once" {
-        ingest(&config, &password, &schema);
-        let manifest = backup::run(&config, &password, &root, &schema)?;
+        ingest(&config, &credentials, &schema);
+        let manifest = backup::run(&config, &credentials, &root, &schema)?;
         println!("backup completed: {}", manifest.id);
         return Ok(());
     }
@@ -120,11 +120,11 @@ fn run() -> Result<()> {
     while !stopping.load(Ordering::SeqCst) {
         let now = Instant::now();
         if now >= next_logs {
-            ingest(&config, &password, &schema);
+            ingest(&config, &credentials, &schema);
             next_logs = Instant::now() + Duration::from_secs(config.backup.log_poll_seconds);
         }
         if now >= next_backup {
-            match backup::run(&config, &password, &root, &schema) {
+            match backup::run(&config, &credentials, &root, &schema) {
                 Ok(m) => println!("backup completed: {}", m.id),
                 Err(err) => eprintln!("backup failed: {err}"),
             }
@@ -132,7 +132,7 @@ fn run() -> Result<()> {
             next_binlog = Instant::now() + Duration::from_secs(config.backup.binlog_poll_seconds);
         } else if now >= next_binlog {
             match backup::oldest_binlog(&root) {
-                Ok(Some(file)) => match binlog::sync(&config, &password, &root, &file) {
+                Ok(Some(file)) => match binlog::sync(&config, &credentials, &root, &file) {
                     Ok(count) if count > 0 => println!("binary logs synchronized: {count} files"),
                     Ok(_) => (),
                     Err(err) => eprintln!("binary log sync failed: {err}"),
@@ -148,8 +148,8 @@ fn run() -> Result<()> {
     Ok(())
 }
 
-fn ingest(config: &config::Config, password: &str, schema: &str) {
-    match db::connect(config, password).and_then(|mut conn| {
+fn ingest(config: &config::Config, credentials: &config::Credentials, schema: &str) {
+    match db::connect(config, credentials).and_then(|mut conn| {
         db::ingest_logs(&mut conn, schema, config.mysql.error_log_file.as_deref())
     }) {
         Ok((errors, slow)) if errors + slow > 0 => {

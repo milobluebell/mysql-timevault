@@ -32,7 +32,8 @@ services:
       mysql:
         condition: service_healthy
     environment:
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      MYSQL_USER: ${MYSQL_USER-}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD-}
     volumes:
       - ${MM_STORAGE_DIR:-./mm-storage}:/app/mm-storage
       - ${MM_CONFIG_FILE:-./mm-config.yaml}:/app/mm-config.yaml:ro

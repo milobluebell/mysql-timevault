@@ -1,4 +1,8 @@
-use crate::{binlog, config::Config, db, Result};
+use crate::{
+    binlog,
+    config::{Config, Credentials},
+    db, Result,
+};
 use chrono::{DateTime, Utc};
 use flate2::{write::GzEncoder, Compression};
 use mysql::prelude::Queryable;
@@ -97,7 +101,7 @@ pub fn remove_stale_partials(root: &Path) -> Result<()> {
 
 pub fn run(
     config: &Config,
-    password: &str,
+    credentials: &Credentials,
     root: &Path,
     metadata_schema: &str,
 ) -> Result<Manifest> {
@@ -105,7 +109,7 @@ pub fn run(
     let suffix = Uuid::new_v4().simple().to_string();
     let id = format!("{}-{}", Utc::now().format("%Y%m%dT%H%M%SZ"), &suffix[..8]);
     let created_at = Utc::now();
-    let mut conn = db::connect(config, password)?;
+    let mut conn = db::connect(config, credentials)?;
     let source_server_uuid: String = conn
         .query_first("SELECT @@server_uuid")?
         .ok_or("source has no server UUID")?;
@@ -122,12 +126,12 @@ pub fn run(
     let outcome = (|| -> Result<Manifest> {
         let (file, position) = dump(
             config,
-            password,
+            credentials,
             metadata_schema,
             dump_client,
             &staging.join("snapshot.sql.gz"),
         )?;
-        let copied = binlog::sync(config, password, root, &file)?;
+        let copied = binlog::sync(config, credentials, root, &file)?;
         let first = binlog::local_from(root, &file)?
             .into_iter()
             .next()
@@ -138,7 +142,7 @@ pub fn run(
         println!("binary logs synchronized: {copied} files");
         let snapshot = staging.join("snapshot.sql.gz");
         let (bytes, sha256) = hash_file(&snapshot)?;
-        let complete = pitr_scope_complete(config, password, metadata_schema)?;
+        let complete = pitr_scope_complete(config, credentials, metadata_schema)?;
         let manifest = Manifest {
             id: id.clone(),
             created_at,
@@ -158,14 +162,14 @@ pub fn run(
         file.write_all(b"\n")?;
         file.sync_all()?;
         fs::rename(&staging, &published)?;
-        let mut conn = db::connect(config, password)?;
+        let mut conn = db::connect(config, credentials)?;
         db::complete_run(
             &mut conn,
             metadata_schema,
             &manifest,
             &published.to_string_lossy(),
         )?;
-        if let Err(err) = prune(config, password, root, metadata_schema) {
+        if let Err(err) = prune(config, credentials, root, metadata_schema) {
             eprintln!("backup succeeded but retention cleanup failed: {err}");
         }
         Ok(manifest)
@@ -176,7 +180,7 @@ pub fn run(
             let _ = fs::remove_dir_all(&staging);
         }
         if !published.exists() {
-            if let Ok(mut conn) = db::connect(config, password) {
+            if let Ok(mut conn) = db::connect(config, credentials) {
                 let _ = db::fail_run(&mut conn, metadata_schema, &id, &err.to_string());
             }
         }
@@ -184,8 +188,12 @@ pub fn run(
     outcome
 }
 
-fn pitr_scope_complete(config: &Config, password: &str, metadata_schema: &str) -> Result<bool> {
-    let mut conn = db::connect(config, password)?;
+fn pitr_scope_complete(
+    config: &Config,
+    credentials: &Credentials,
+    metadata_schema: &str,
+) -> Result<bool> {
+    let mut conn = db::connect(config, credentials)?;
     let names: Vec<String> = conn.query("SELECT SCHEMA_NAME FROM information_schema.SCHEMATA")?;
     let present: HashSet<_> = names
         .into_iter()
@@ -202,7 +210,7 @@ fn pitr_scope_complete(config: &Config, password: &str, metadata_schema: &str) -
 
 fn dump(
     config: &Config,
-    password: &str,
+    credentials: &Credentials,
     metadata_schema: &str,
     dump_client: &str,
     target: &Path,
@@ -222,13 +230,13 @@ fn dump(
         .arg("--hex-blob")
         .arg(format!("--host={}", config.mysql.host))
         .arg(format!("--port={}", config.mysql.port))
-        .arg(format!("--user={}", config.mysql.user))
+        .arg(format!("--user={}", credentials.user))
         .arg("--protocol=tcp")
         .arg("--skip-lock-tables")
         .arg("--databases")
         .args(&config.backup.databases)
         .arg(metadata_schema)
-        .env("MYSQL_PWD", password)
+        .env("MYSQL_PWD", &credentials.password)
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit());
     let mut child = command.spawn()?;
@@ -334,11 +342,11 @@ pub fn verify_snapshot(root: &Path, manifest: &Manifest) -> Result<PathBuf> {
     Ok(path)
 }
 
-fn prune(config: &Config, password: &str, root: &Path, schema: &str) -> Result<()> {
+fn prune(config: &Config, credentials: &Credentials, root: &Path, schema: &str) -> Result<()> {
     let manifests = list(root)?;
     let excess = manifests.len().saturating_sub(config.backup.max_backups);
     for manifest in manifests.iter().take(excess) {
-        let mut conn = db::connect(config, password)?;
+        let mut conn = db::connect(config, credentials)?;
         db::prune_run(&mut conn, schema, &manifest.id)?;
         fs::remove_dir_all(backup_dir(root).join(&manifest.id))?;
         println!("old backup removed: {}", manifest.id);

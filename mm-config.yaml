@@ -2,7 +2,7 @@ mysql:
   host: your-mysql-host.example.com
   port: 3306
   user: mm_agent
-  password_env: MYSQL_PASSWORD
+  # password: set-this-for-direct-YAML-configuration
 
 backup:
   databases:

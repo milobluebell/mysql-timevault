@@ -14,7 +14,7 @@ fn list_uses_storage_dir_even_when_config_is_elsewhere() {
     let config_path = config_dir.join("mm-config.yaml");
     fs::write(
         &config_path,
-        "mysql:\n  host: mysql\n  user: backup\n  password_env: MYSQL_PASSWORD\nbackup:\n  databases: [app]\n",
+        "mysql:\n  host: mysql\n  user: backup\n  password: test-secret\nbackup:\n  databases: [app]\n",
     )
     .unwrap();
     let manifest = Manifest {
@@ -41,6 +41,22 @@ fn list_uses_storage_dir_even_when_config_is_elsewhere() {
         .arg(config_path)
         .arg("--storage-dir")
         .arg(storage_dir)
+        .arg("list")
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(String::from_utf8(output.stdout).unwrap().contains(id));
+
+    let output = Command::new(env!("CARGO_BIN_EXE_mysql-timevault"))
+        .current_dir(&config_dir)
+        .env_remove("MYSQL_USER")
+        .env_remove("MYSQL_PASSWORD")
+        .arg("--storage-dir")
+        .arg(temp.path().join("storage"))
         .arg("list")
         .output()
         .unwrap();
