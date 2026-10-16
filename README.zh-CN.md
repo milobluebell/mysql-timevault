@@ -82,6 +82,6 @@ docker compose start backup
 - 源库须启用 binary log 和 `binlog_format=ROW`。时间点恢复要求备份全部非系统库及连续日志；用 `--at <RFC3339 UTC 时间>` 指定时间。恢复前设置 `RESTORE_PASSWORD`；必要时加 `--target-port`。
 - 使用 Docker 时，源库须从容器内可达：宿主机用 `host.docker.internal`；另一 Compose 项目需设置 `MYSQL_DOCKER_NETWORK` 和 `COMPOSE_FILE=compose.yaml:compose.network.yaml`。
 - Docker 的 `MM_STORAGE_DIR` 默认为 `./mm-storage`；`MM_CONFIG_FILE` 默认为 `./mm-config.yaml`。首次定时备份在 24 小时后，默认保留 3 份；修改 YAML 后重启，并异机保存备份副本。
-- 自带 MySQL：将 `examples/mm-config.with-mysql.yaml` 复制到 `mm-config.yaml`，运行 `docker compose -f compose.with-mysql.yaml up -d`。复用旧实例须让 `MYSQL_STORAGE_DIR` 指向原数据目录，默认值为 `./storage`。
+- 自带 MySQL：将 `examples/mm-config.with-mysql.yaml` 复制到 `mm-config.yaml`，运行 `docker compose -f compose.with-mysql.yaml up -d`。同一 Compose 中备份容器连接 `mysql:3306`；`27051` 是提供给宿主机或外部客户端的端口。复用旧实例须让 `MYSQL_STORAGE_DIR` 指向原数据目录，默认值为 `./storage`。
 - 慢查询采集需启用 `slow_query_log=ON` 和 `log_output=TABLE`；错误日志归档需设置 `MYSQL_ERROR_LOG_FILE`、`mysql.error_log_file: /mysql-data/error.log` 和 `compose.error-log.yaml`。
 - 在 8.x 中，`mm\_%` 授权要求 `partial_revokes=OFF`，且库名通配符已弃用。导出例程所需的全局 `SELECT` 允许读取源实例的所有库。
